@@ -35,7 +35,10 @@ def identify_song (audio_file_path):
         'timestamp': timestamp
     }
 
-    response = requests.post(f"http://{HOST}/v1/identify", files=files, data=data)
-    result = response.json()
-
-    return result
+    try:
+        response = requests.post(f"http://{HOST}/v1/identify", files=files, data=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        return result
+    except:
+        return None

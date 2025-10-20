@@ -6,6 +6,8 @@ def _get(d: Any, path: list, default=None):
     for p in path:
         if isinstance(current, dict) and isinstance(p, str):
             current = current.get(p, default if p == path[-1] else None)
+        elif isinstance(current, list) and isinstance(p, int) and 0 <= p < len(current):
+            current = current[p]
         else:
             return default
     return current
