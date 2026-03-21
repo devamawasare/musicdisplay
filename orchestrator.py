@@ -1,6 +1,6 @@
-from PyQt5.QtCore import QObject, QTime, QTimer, QThread, pyqtSignal
-from recognizer import Track
-from recognizer import recognizer_worker
+from PyQt5.QtCore import QObject, QTimer, QThread, pyqtSignal
+from recognizer import Track, recognizer_worker
+
 
 class Orchestrator(QObject):
     trackUpdated = pyqtSignal(Track)
@@ -24,33 +24,32 @@ class Orchestrator(QObject):
         self.worker.nothingFound.connect(self.on_nothing_found)
         self.worker.error.connect(self.on_error)
 
-        def start(self):
-            self.timer.start()
-            self.status.emit("Polling Started")
+    def start(self):
+        self.timer.start()
+        self.status.emit("Listening...")
 
-        def stop(self):
-            self.timer.stop()
-            self.thread.quit()
-            self.thread.wait()
+    def stop(self):
+        self.timer.stop()
+        self.thread.quit()
+        self.thread.wait()
 
-        def trigger_recognition(self):
-            if self.recognizing:
-                return
-            self.recognizing = True
-            QTimer.singleShot(0, self.worker.try_recognition)
+    def trigger_recognition(self):
+        if self.recognizing:
+            return
+        self.recognizing = True
+        self.status.emit("Recognizing...")
+        QTimer.singleShot(0, self.worker.try_recognition)
 
-        def on_track_found(self, track: Track):
-            self.recognizing = False
-            if track.title != self.last_track:
-                self.last_track = track.title
-                self.trackUpdated.emit(track)
+    def on_track_found(self, track: Track):
+        self.recognizing = False
+        if track.title != self.last_track:
+            self.last_track = track.title
+            self.trackUpdated.emit(track)
 
-        def on_nothing_found(self):
-            self.recognizing = False
-            self.status.emit("No Track Found")
+    def on_nothing_found(self):
+        self.recognizing = False
+        self.status.emit("Listening...")
 
-        def on_error(self, e: str):
-            self.recognizing = False
-            self.status.emit(f"Recognition Error - {e}")
-
-
+    def on_error(self, e: str):
+        self.recognizing = False
+        self.status.emit(f"Error: {e}")

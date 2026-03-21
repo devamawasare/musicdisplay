@@ -1,6 +1,5 @@
 import requests
 
-spotify_album_id = "4m2880jivSbbyEGAKfITCa"
 
 def spotify_oembed(spot_url: str) -> str | None:
     try:
@@ -16,6 +15,18 @@ def spotify_oembed(spot_url: str) -> str | None:
         pass
     return None
 
-thumb = spotify_oembed(f"https://open.spotify.com/album/{spotify_album_id}")
 
-print (thumb)
+def fetch_image_bytes(url: str) -> bytes | None:
+    try:
+        r = requests.get(url, timeout=5)
+        if r.ok:
+            return r.content
+    except Exception:
+        pass
+    return None
+
+
+if __name__ == "__main__":
+    spotify_album_id = "4m2880jivSbbyEGAKfITCa"
+    thumb = spotify_oembed(f"https://open.spotify.com/album/{spotify_album_id}")
+    print(thumb)
