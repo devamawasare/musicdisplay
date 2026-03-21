@@ -3,7 +3,7 @@ import datetime
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor, QPainter
-from recognizer import Track
+from track import Track
 
 PHOSPHOR       = "#ffb000"
 PHOSPHOR_DIM   = "#996800"

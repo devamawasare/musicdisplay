@@ -1,18 +1,10 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-from dataclasses import dataclass
 
 import acrcloud_api
 import helpers
 from image_extractor import spotify_oembed, fetch_image_bytes
 from audio_capture import record_clip
-
-
-@dataclass(frozen=True)
-class Track:
-    title: str
-    artist: str | None = None
-    album: str | None = None
-    cover_bytes: bytes | None = None
+from track import Track
 
 
 class recognizer_worker(QObject):
