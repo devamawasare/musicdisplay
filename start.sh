@@ -1,4 +1,4 @@
 #!/bin/bash
-cd /home/pi/musicdisplay
+cd /home/devam/repositories/musicdisplay
 git pull
-/home/pi/musicdisplay-venv/bin/pip install -r requirements.txt
+/home/devam/musicdisplay-venv/bin/pip install -r requirements.txt
