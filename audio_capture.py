@@ -6,7 +6,7 @@ SAMPLE_RATE = 44100
 DURATION_SECONDS = 10
 CHANNELS = 1
 OUTPUT_PATH = "audio_files/live_capture.wav"
-DEVICE = None  # Set to USB mic device index if not system default
+DEVICE = 0  # Set to USB mic device index if not system default
               # Check available devices: python3 -c "import sounddevice; print(sounddevice.query_devices())"
 
 
