@@ -11,7 +11,7 @@ def main():
 
     orchestrate = Orchestrator()
     orchestrate.trackUpdated.connect(ui.setTrack)
-    orchestrate.status.connect(ui.setStatus)
+    orchestrate.noTrack.connect(ui.clearTrack)
     ui.paused.connect(orchestrate.pause_polling)
     ui.resumed.connect(orchestrate.resume_polling)
     orchestrate.start()

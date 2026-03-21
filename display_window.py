@@ -5,9 +5,10 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor, QPainter
 from recognizer import Track
 
-PHOSPHOR     = "#ffb000"
-PHOSPHOR_DIM = "#996800"
-FONT_MONO    = "Courier New, Consolas, monospace"
+PHOSPHOR       = "#ffb000"
+PHOSPHOR_DIM   = "#996800"
+PHOSPHOR_PAUSED = "#33cc44"
+FONT_MONO      = "Courier New, Consolas, monospace"
 
 
 class ScanlineOverlay(QWidget):
@@ -42,20 +43,16 @@ class DisplayWidget(QWidget):
         self.art_label.setFixedSize(300, 300)
         self.art_label.setAlignment(Qt.AlignCenter)
         self.art_label.setScaledContents(True)
+        self.art_label.setVisible(False)
 
-        self.status_label = QLabel("Listening...")
         self.title_label  = QLabel("-")
         self.artist_label = QLabel("-")
         self.album_label  = QLabel("-")
 
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet(
-            f"font-size: 24px; color: {PHOSPHOR_DIM}; font-family: {FONT_MONO};"
-        )
-
         for lbl in (self.title_label, self.artist_label, self.album_label):
             lbl.setAlignment(Qt.AlignCenter)
             lbl.setWordWrap(True)
+            lbl.setVisible(False)
 
         self.title_label.setStyleSheet(
             f"font-size: 48px; font-weight: bold; color: {PHOSPHOR}; font-family: {FONT_MONO};"
@@ -67,14 +64,13 @@ class DisplayWidget(QWidget):
             f"font-size: 32px; color: {PHOSPHOR_DIM}; font-family: {FONT_MONO};"
         )
 
-        for lbl in (self.status_label, self.title_label, self.artist_label, self.album_label):
+        for lbl in (self.title_label, self.artist_label, self.album_label):
             lbl.setGraphicsEffect(self._make_glow())
 
         layout.addWidget(self.art_label, alignment=Qt.AlignCenter)
         layout.addWidget(self.title_label)
         layout.addWidget(self.artist_label)
         layout.addWidget(self.album_label)
-        layout.addWidget(self.status_label)
 
         self.clock_label = QLabel()
         self.clock_label.setAlignment(Qt.AlignCenter)
@@ -82,13 +78,15 @@ class DisplayWidget(QWidget):
             f"font-size: 96px; font-weight: bold; color: {PHOSPHOR}; font-family: {FONT_MONO};"
         )
         self.clock_label.setGraphicsEffect(self._make_glow())
-        self.clock_label.setVisible(False)
+        self.clock_label.setVisible(True)
         layout.addWidget(self.clock_label)
 
         self._paused = False
         self._clock_timer = QTimer(self)
         self._clock_timer.setInterval(1000)
         self._clock_timer.timeout.connect(self._tick_clock)
+        self._tick_clock()
+        self._clock_timer.start()
 
         self._overlay = ScanlineOverlay(self)
 
@@ -115,41 +113,51 @@ class DisplayWidget(QWidget):
     def _tick_clock(self):
         self.clock_label.setText(datetime.datetime.now().strftime("%H:%M:%S"))
 
-    def _enter_paused_state(self):
-        self._paused = True
-        for w in (self.art_label, self.title_label, self.artist_label,
-                  self.album_label, self.status_label):
+    def _set_clock_color(self, color: str):
+        self.clock_label.setStyleSheet(
+            f"font-size: 96px; font-weight: bold; color: {color}; font-family: {FONT_MONO};"
+        )
+
+    def _enter_clock_mode(self):
+        for w in (self.art_label, self.title_label, self.artist_label, self.album_label):
             w.setVisible(False)
+        self._set_clock_color(PHOSPHOR)
         self.clock_label.setVisible(True)
-        self._tick_clock()
-        self._clock_timer.start()
-        self.paused.emit()
 
-    def _enter_active_state(self):
-        self._paused = False
-        self._clock_timer.stop()
+    def _enter_art_mode(self, track: Track):
         self.clock_label.setVisible(False)
-        for w in (self.art_label, self.title_label, self.artist_label,
-                  self.album_label, self.status_label):
-            w.setVisible(True)
-        self.resumed.emit()
-
-    def setTrack(self, track: Track):
-        if self._paused:
-            return
         self.title_label.setText(track.title or "-")
         self.artist_label.setText(track.artist or "-")
         self.album_label.setText(track.album or "-")
-        self.status_label.setText("")
-
         if track.cover_bytes:
             pixmap = QPixmap()
             pixmap.loadFromData(track.cover_bytes)
             self.art_label.setPixmap(pixmap)
         else:
             self.art_label.clear()
+        for w in (self.art_label, self.title_label, self.artist_label, self.album_label):
+            w.setVisible(True)
 
-    def setStatus(self, text: str):
+    def _enter_paused_state(self):
+        self._paused = True
+        for w in (self.art_label, self.title_label, self.artist_label, self.album_label):
+            w.setVisible(False)
+        self._set_clock_color(PHOSPHOR_PAUSED)
+        self.clock_label.setVisible(True)
+        self.paused.emit()
+
+    def _enter_active_state(self):
+        self._paused = False
+        self._set_clock_color(PHOSPHOR)
+        self._enter_clock_mode()
+        self.resumed.emit()
+
+    def setTrack(self, track: Track):
         if self._paused:
             return
-        self.status_label.setText(text)
+        self._enter_art_mode(track)
+
+    def clearTrack(self):
+        if self._paused:
+            return
+        self._enter_clock_mode()

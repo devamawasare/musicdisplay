@@ -4,12 +4,14 @@ from recognizer import Track, recognizer_worker
 
 class Orchestrator(QObject):
     trackUpdated = pyqtSignal(Track)
-    status = pyqtSignal(str)
+    noTrack      = pyqtSignal()
 
     def __init__(self, poll_ms: int = 20000):
         super().__init__()
         self.last_track: str | None = None
         self.recognizing = False
+        self._normal_poll_ms = poll_ms
+        self._failure_count = 0
 
         self.timer = QTimer(self)
         self.timer.setInterval(poll_ms)
@@ -26,14 +28,12 @@ class Orchestrator(QObject):
 
     def start(self):
         self.timer.start()
-        self.status.emit("Listening...")
 
     def pause_polling(self):
         self.timer.stop()
 
     def resume_polling(self):
         self.timer.start()
-        self.status.emit("Listening...")
 
     def stop(self):
         self.timer.stop()
@@ -44,19 +44,26 @@ class Orchestrator(QObject):
         if self.recognizing:
             return
         self.recognizing = True
-        self.status.emit("Recognizing...")
         QTimer.singleShot(0, self.worker.try_recognition)
 
     def on_track_found(self, track: Track):
         self.recognizing = False
+        self._failure_count = 0
+        if self.timer.interval() != self._normal_poll_ms:
+            self.timer.setInterval(self._normal_poll_ms)
         if track.title != self.last_track:
             self.last_track = track.title
             self.trackUpdated.emit(track)
 
-    def on_nothing_found(self):
+    def _handle_failure(self):
         self.recognizing = False
-        self.status.emit("Listening...")
+        self._failure_count += 1
+        self.noTrack.emit()
+        if self._failure_count >= 3 and self.timer.interval() == self._normal_poll_ms:
+            self.timer.setInterval(self._normal_poll_ms * 3)
+
+    def on_nothing_found(self):
+        self._handle_failure()
 
     def on_error(self, e: str):
-        self.recognizing = False
-        self.status.emit(f"Error: {e}")
+        self._handle_failure()
