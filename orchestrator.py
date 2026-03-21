@@ -28,6 +28,13 @@ class Orchestrator(QObject):
         self.timer.start()
         self.status.emit("Listening...")
 
+    def pause_polling(self):
+        self.timer.stop()
+
+    def resume_polling(self):
+        self.timer.start()
+        self.status.emit("Listening...")
+
     def stop(self):
         self.timer.stop()
         self.thread.quit()
