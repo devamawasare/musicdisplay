@@ -1,9 +1,12 @@
 import datetime
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsDropShadowEffect
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap, QColor, QPainter
 from track import Track
+import config
+from animation_layer import AnimationLayer
+from weather_service import WeatherService
 
 PHOSPHOR       = "#ffb000"
 PHOSPHOR_DIM   = "#996800"
@@ -35,6 +38,8 @@ class DisplayWidget(QWidget):
         super().__init__()
         self.setWindowTitle("Music Display")
         self.setStyleSheet("background-color: black;")
+
+        self._anim_layer = AnimationLayer(self)
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
@@ -81,7 +86,27 @@ class DisplayWidget(QWidget):
         self.clock_label.setVisible(True)
         layout.addWidget(self.clock_label)
 
+        self.date_label = QLabel()
+        self.date_label.setAlignment(Qt.AlignCenter)
+        self.date_label.setStyleSheet(
+            f"font-size: 36px; color: {PHOSPHOR}; font-family: {FONT_MONO};"
+        )
+        self.date_label.setGraphicsEffect(self._make_glow())
+        self.date_label.setVisible(True)
+        layout.addWidget(self.date_label)
+
+        self.weather_label = QLabel("-- --")
+        self.weather_label.setAlignment(Qt.AlignCenter)
+        self.weather_label.setStyleSheet(
+            f"font-size: 28px; color: {PHOSPHOR_DIM}; font-family: {FONT_MONO};"
+        )
+        self.weather_label.setGraphicsEffect(self._make_glow())
+        self.weather_label.setVisible(True)
+        layout.addWidget(self.weather_label)
+
         self._paused = False
+        self._last_minute: int = -1
+
         self._clock_timer = QTimer(self)
         self._clock_timer.setInterval(1000)
         self._clock_timer.timeout.connect(self._tick_clock)
@@ -89,6 +114,13 @@ class DisplayWidget(QWidget):
         self._clock_timer.start()
 
         self._overlay = ScanlineOverlay(self)
+        self._anim_layer.lower()
+
+        self._weather = WeatherService(
+            config.LATITUDE, config.LONGITUDE, config.UNITS, config.WEATHER_REFRESH_MS
+        )
+        self._weather.weatherReady.connect(self._on_weather_update)
+        self._weather.start()
 
         self.setLayout(layout)
         self.showFullScreen()
@@ -102,6 +134,7 @@ class DisplayWidget(QWidget):
 
     def resizeEvent(self, event):
         self._overlay.resize(self.size())
+        self._anim_layer.resize(self.size())
         super().resizeEvent(event)
 
     def keyPressEvent(self, event):
@@ -110,8 +143,20 @@ class DisplayWidget(QWidget):
         else:
             super().keyPressEvent(event)
 
+    def _update_date(self) -> None:
+        now = datetime.datetime.now()
+        self.date_label.setText(now.strftime("%A, %d %B %Y"))
+        self._last_minute = now.minute
+
     def _tick_clock(self):
-        self.clock_label.setText(datetime.datetime.now().strftime("%H:%M:%S"))
+        now = datetime.datetime.now()
+        self.clock_label.setText(now.strftime("%H:%M:%S"))
+        if now.minute != self._last_minute:
+            self._update_date()
+
+    @pyqtSlot(str, str)
+    def _on_weather_update(self, temp: str, desc: str) -> None:
+        self.weather_label.setText(f"{temp}  {desc}")
 
     def _set_clock_color(self, color: str):
         self.clock_label.setStyleSheet(
@@ -123,9 +168,13 @@ class DisplayWidget(QWidget):
             w.setVisible(False)
         self._set_clock_color(PHOSPHOR)
         self.clock_label.setVisible(True)
+        self.date_label.setVisible(True)
+        self.weather_label.setVisible(True)
 
     def _enter_art_mode(self, track: Track):
         self.clock_label.setVisible(False)
+        self.date_label.setVisible(False)
+        self.weather_label.setVisible(False)
         self.title_label.setText(track.title or "-")
         self.artist_label.setText(track.artist or "-")
         self.album_label.setText(track.album or "-")
@@ -144,6 +193,8 @@ class DisplayWidget(QWidget):
             w.setVisible(False)
         self._set_clock_color(PHOSPHOR_PAUSED)
         self.clock_label.setVisible(True)
+        self.date_label.setVisible(True)
+        self.weather_label.setVisible(True)
         self.paused.emit()
 
     def _enter_active_state(self):
