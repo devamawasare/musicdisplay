@@ -1,1 +1,8 @@
 .vs/
+.claude/
+
+# Android
+android-remote/.gradle/
+android-remote/.idea/
+android-remote/app/build/
+android-remote/local.properties
