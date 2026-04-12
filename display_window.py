@@ -203,6 +203,16 @@ class DisplayWidget(QWidget):
         self._enter_clock_mode()
         self.resumed.emit()
 
+    @pyqtSlot()
+    def remote_pause(self):
+        if not self._paused:
+            self._enter_paused_state()
+
+    @pyqtSlot()
+    def remote_resume(self):
+        if self._paused:
+            self._enter_active_state()
+
     def setTrack(self, track: Track):
         if self._paused:
             return
