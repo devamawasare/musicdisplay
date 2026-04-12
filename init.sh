@@ -53,5 +53,11 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable musicdisplay.service
 
+echo "==> Granting passwordless restart permission..."
+SUDOERS_LINE="$USER ALL=(ALL) NOPASSWD: /bin/systemctl restart musicdisplay"
+SUDOERS_FILE="/etc/sudoers.d/musicdisplay"
+echo "$SUDOERS_LINE" | sudo tee "$SUDOERS_FILE" > /dev/null
+sudo chmod 0440 "$SUDOERS_FILE"
+
 echo "==> Done. Service enabled — it will start automatically on next boot."
 echo "    To start now: sudo systemctl start musicdisplay"

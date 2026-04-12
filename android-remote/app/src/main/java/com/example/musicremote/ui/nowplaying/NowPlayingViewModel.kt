@@ -105,6 +105,16 @@ class NowPlayingViewModel(
         }
     }
 
+    fun onRestartClicked() {
+        viewModelScope.launch {
+            val ip = settingsRepo.getPiIpAddress()
+            val repo = DisplayRepository(ip)
+            repo.sendRestart()
+            // Pi will go offline briefly — show loading state while it reboots
+            _uiState.value = DisplayUiState.Loading
+        }
+    }
+
     fun stopPolling() {
         pollJob?.cancel()
     }

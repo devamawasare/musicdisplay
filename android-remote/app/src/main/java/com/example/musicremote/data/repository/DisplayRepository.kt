@@ -12,4 +12,5 @@ class DisplayRepository(host: String) {
     suspend fun sendPause(): Result<Unit> = runCatching { api.pause(); Unit }
     suspend fun sendResume(): Result<Unit> = runCatching { api.resume(); Unit }
     suspend fun sendScan(): Result<Unit> = runCatching { api.scan(); Unit }
+    suspend fun sendRestart(): Result<Unit> = runCatching { api.restart(); Unit }
 }

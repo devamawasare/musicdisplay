@@ -21,4 +21,7 @@ interface MusicDisplayApi {
 
     @POST("scan")
     suspend fun scan(): ResponseBody
+
+    @POST("restart")
+    suspend fun restart(): ResponseBody
 }

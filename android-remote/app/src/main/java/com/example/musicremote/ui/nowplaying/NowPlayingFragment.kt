@@ -55,6 +55,7 @@ class NowPlayingFragment : Fragment() {
 
         binding.btnPauseResume.setOnClickListener { viewModel.onPauseResumeClicked() }
         binding.btnScan.setOnClickListener { viewModel.onForceScanClicked() }
+        binding.btnRestart.setOnClickListener { viewModel.onRestartClicked() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

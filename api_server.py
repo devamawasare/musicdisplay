@@ -1,3 +1,4 @@
+import subprocess
 import threading
 from flask import Flask, jsonify, abort
 
@@ -57,4 +58,14 @@ def post_resume():
 @app.post("/scan")
 def post_scan():
     _bridge.scanRequested.emit()
+    return jsonify({"ok": True})
+
+
+@app.post("/restart")
+def post_restart():
+    def _do_restart():
+        import time
+        time.sleep(0.5)  # let the HTTP response go out before systemd kills us
+        subprocess.run(["sudo", "systemctl", "restart", "musicdisplay"])
+    threading.Thread(target=_do_restart, daemon=True).start()
     return jsonify({"ok": True})
