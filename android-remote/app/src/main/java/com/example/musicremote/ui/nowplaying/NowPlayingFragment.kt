@@ -17,6 +17,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.musicremote.R
 import com.example.musicremote.data.repository.SettingsRepository
 import com.example.musicremote.databinding.FragmentNowPlayingBinding
+import com.example.musicremote.dataStore
 import kotlinx.coroutines.launch
 
 class NowPlayingFragment : Fragment() {
@@ -143,7 +144,3 @@ class NowPlayingFragment : Fragment() {
         _binding = null
     }
 }
-
-// Extension to access the DataStore from a Context
-private val android.content.Context.dataStore: androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
-    by androidx.datastore.preferences.preferencesDataStore(name = "settings")
